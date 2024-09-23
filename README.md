@@ -1,0 +1,1 @@
+# plugins-widget-post-slider
