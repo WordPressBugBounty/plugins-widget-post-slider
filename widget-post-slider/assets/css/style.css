@@ -5,6 +5,15 @@
 .sp-widget-post-slider-section .widget-post-slider{
 	position: relative;
 }
+.sp-widget-post-slider-section .wps-image{
+	display: block;
+	width: 100%;
+	height: auto;
+}
+.sp-widget-post-slider-section .wps-image--placeholder{
+	background-color: #e5e7eb;
+	aspect-ratio: 360 / 250;
+}
 .widget-post-slider .wps-caption{
 	background-color: rgba(34,34,34,0.77);
 	font-size: 14px;
@@ -21,20 +30,27 @@
 .sp-widget-post-slider-section .slick-arrow{
 	position: absolute;
 	top: 50%;
-	margin-top: -30px;
+	margin-top: -15px;
 	z-index: 22;
 	background-color: #00AFD1;
 	color: #fff;
 	width: 24px;
 	height: 30px;
-	text-align: center;
-	line-height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	cursor: pointer;
 	-webkit-transition: all .4s;
 	-moz-transition: all .4s;
 	-ms-transition: all .4s;
 	-o-transition: all .4s;
 	transition: all .4s;
+}
+.sp-widget-post-slider-section .slick-arrow svg{
+	width: 20px;
+	height: 20px;
+	display: block;
+	stroke: currentColor;
 }
 .sp-widget-post-slider-section .slick-arrow.slick-prev{
 	left: -35px;

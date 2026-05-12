@@ -1,10 +1,11 @@
 === Widget Post Slider ===
 Contributors: rubel_miah
 Donate link: https://shapedplugin.com
-Tags: widget post slider, latest posts widget slider, widget, posts widget, category posts slider, latest category posts slider, post thumbnails, slider widget, widget slider post
-Requires at least: 4.3
-Tested up to: 6.5
-Stable tag: 1.3.6
+Tags: post slider, slider widget, post carousel, posts widget, category slider
+Requires at least: 5.8
+Tested up to: 6.8
+Requires PHP: 7.4
+Stable tag: 1.3.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,15 +16,14 @@ Widget Post Slider to display posts image in a slider from category.
 
 [youtube https://www.youtube.com/watch?v=5uf55sLb4V0]
 
-<p>If you want to add a widget to show posts images with caption in a carousel/slider Widget Post Slider is for you. This plugin brings all the post images with the title from blog posts. You can show limited slider too. It It's light weight and simple install activate plugin. It's user option is so simple to use. It loads very fast. It's fully responsive that adapts to any device like tablet and mobile. You don't need to add any extra jQuery or css, just install and active</p>
+If you want to add a widget to show posts images with caption in a carousel/slider Widget Post Slider is for you. This plugin brings all the post images with the title from blog posts. You can show limited slider too. It's light weight and simple, install activate plugin. It's user option is so simple to use. It loads very fast. It's fully responsive that adapts to any device like tablet and mobile. You don't need to add any extra jQuery or css, just install and activate.
 
 **Plugin Features**
-<ul>
-<li>Slider on Widget</li>
-<li>Unlimited post slider</li>
-<li>Limiting slider with option</li>
-<li>Fully Responsive</li>
-</ul>
+
+* Slider on Widget
+* Unlimited post slider
+* Limiting slider with option
+* Fully Responsive
 
 
 == Installation ==
@@ -40,6 +40,14 @@ Widget Post Slider to display posts image in a slider from category.
 2. Widget area.
 
 == Changelog ==
+
+= 1.3.7 – May 12, 2026 =
+* New: Posts without a featured image now render a placeholder so they no longer disappear from the slider.
+* Improved: Slide images now stretch to fill the widget area for a consistent layout.
+* Improved: Plugin security improved.
+* Improved: Replaced Font Awesome icons with inline SVG to remove an external dependency.
+* Improved: Declared modern WordPress and PHP version requirements.
+* Tested: WordPress 6.8 compatibility.
 
 = 1.3.6 – Apr 10, 2024 =
 * Improved: The plugin security improved.
@@ -70,12 +78,7 @@ Widget Post Slider to display posts image in a slider from category.
 * Add New Design.
 
 = 1.0.1 =
-
 * Error fixed.
 
 = 1.0 =
-
 * Initial Release.
-
-
-

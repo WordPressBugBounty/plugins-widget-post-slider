@@ -9,7 +9,9 @@
  * Plugin Name:       Widget Post Slider
  * Plugin URI:        https://wordpress.org/plugins/widget-post-slider/
  * Description:       Widget Post Slider to display posts image in a slider from category.
- * Version:           1.3.6
+ * Version:           1.3.7
+ * Requires at least: 5.8
+ * Requires PHP:      7.4
  * Author:            ShapedPlugin
  * Author URI:        https://shapedplugin.com/
  * License:           GPL-2.0+

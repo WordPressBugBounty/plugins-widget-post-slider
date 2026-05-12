@@ -21,7 +21,13 @@ function sp_widget_post_slider_register() {
 }
 
 /**
- * The Post Slider Widget Class.
+ * The Post Slider Widget class.
+ *
+ * Stored instance shape:
+ *   - title    string  Display title; passed through the widget_title filter on render.
+ *   - cat_name string  'all' sentinel for "no category filter", otherwise a term ID as a string.
+ *                      Stored as a string so selected() comparisons in form() match the <option value>.
+ *   - count    int     Slides to query; coerced to >= 1 (defaults to 5).
  */
 class SP_Widget_Post_Slider extends WP_Widget {
 
@@ -37,92 +43,107 @@ class SP_Widget_Post_Slider extends WP_Widget {
 	}
 
 	/**
-	 * Front-end display of widget
+	 * Front-end display of widget.
 	 *
-	 * @param array $args Arguments.
+	 * Render notes:
+	 *   - cat_name === 'all' is the sentinel for "no category filter"; any other value is treated as a term ID.
+	 *   - sp_widget_post_slider_enqueue_assets() is called here as a fallback for the Legacy Widget Block,
+	 *     where is_active_widget() in scripts.php does not fire.
+	 *   - The global $post is reassigned so setup_postdata() makes template tags (get_permalink,
+	 *     get_the_title, has_post_thumbnail) target the current loop item; wp_reset_postdata() restores it.
+	 *   - Posts without a featured image fall back to a shipped placeholder SVG sized to the
+	 *     registered wps_thumbnail_size (360x250) so every slide has consistent dimensions; CSS
+	 *     stretches it to the widget area like real thumbnails.
+	 *
+	 * @param array $args     Sidebar arguments (before/after_widget, before/after_title).
 	 * @param array $instance The widget instance.
 	 * @return void
 	 */
 	public function widget( $args, $instance ) {
-		extract( $args );
+		$before_widget = isset( $args['before_widget'] ) ? $args['before_widget'] : '';
+		$after_widget  = isset( $args['after_widget'] ) ? $args['after_widget'] : '';
+		$before_title  = isset( $args['before_title'] ) ? $args['before_title'] : '';
+		$after_title   = isset( $args['after_title'] ) ? $args['after_title'] : '';
 
-		$title  = isset( $instance['title'] ) ? apply_filters( 'widget_title', $instance['title'] ) : '';
-		$count  = isset( $instance['count'] ) ? (int) $instance['count'] : 5;
-		$cat_id = isset( $instance['cat_name'] ) ? sanitize_text_field( $instance['cat_name'] ) : 'uncategorized';
+		$title = isset( $instance['title'] ) ? apply_filters( 'widget_title', $instance['title'] ) : '';
+		$count = isset( $instance['count'] ) ? absint( $instance['count'] ) : 5;
+		if ( $count < 1 ) {
+			$count = 5;
+		}
+		$cat_name = isset( $instance['cat_name'] ) ? sanitize_text_field( $instance['cat_name'] ) : 'all';
 
 		echo wp_kses_post( $before_widget );
-
-		$output = '';
 
 		if ( $title ) {
 			echo wp_kses_post( $before_title . $title . $after_title );
 		}
 
-		global $post;
-
-		$custom_id = uniqid();
-		$args      = array(
+		$query_args = array(
 			'posts_per_page' => $count,
-			'category'       => $cat_id,
+			'no_found_rows'  => true,
 		);
-
-		$posts = get_posts( $args );
-
-		if ( count( $posts ) > 0 ) {
-
-			$output .= '
-		    <script type="text/javascript">
-		    jQuery(document).ready(function() {
-				jQuery("#sp-widget-post-slider-' . esc_attr( $custom_id ) . '").slick({
-			        dots: false,
-			        infinite: true,
-			        slidesToShow: 1,
-			        slidesToScroll: 1,
-			        autoplay: true,
-		            speed: 600,
-		            autoplaySpeed: 4000,
-		            arrows: true,
-		            prevArrow: "<div class=\'slick-prev\'><i class=\'fa fa-angle-left\'></i></div>",
-		            nextArrow: "<div class=\'slick-next\'><i class=\'fa fa-angle-right\'></i></div>",
-		        });
-
-		    });
-		    </script>';
-
-			$output .= '<div id="sp-widget-post-slider-' . esc_attr( $custom_id ) . '" class="sp-widget-post-slider-section">';
-			foreach ( $posts as $post ) :
-				setup_postdata( $post );
-
-				if ( has_post_thumbnail() ) {
-					$output .= '<div class="widget-post-slider">';
-					$output .= '<a href="' . get_permalink() . '">' . get_the_post_thumbnail( $post->ID, 'wps_thumbnail_size', array( 'class' => 'wps-image' ) ) . '</a>';
-					$output .= '<div class="wps-caption"><a href="' . get_permalink() . '">' . get_the_title() . '</a></div>';
-					$output .= '</div>';
-				}
-
-			endforeach;
-			$output .= '</div>';
-
+		if ( 'all' !== $cat_name && (int) $cat_name > 0 ) {
+			$query_args['cat'] = (int) $cat_name;
 		}
 
-		echo $output;
+		$posts = get_posts( $query_args );
+
+		if ( ! empty( $posts ) ) {
+			sp_widget_post_slider_enqueue_assets();
+			?>
+			<div class="sp-widget-post-slider-section">
+				<?php
+				global $post;
+				$placeholder_src = esc_url( WIDGET_POST_SLIDER_URL . 'assets/images/placeholder.svg' );
+				foreach ( $posts as $post ) {
+					setup_postdata( $post );
+					if ( has_post_thumbnail() ) {
+						$image_html = get_the_post_thumbnail( $post->ID, 'wps_thumbnail_size', array( 'class' => 'wps-image' ) );
+					} else {
+						$image_html = sprintf(
+							'<img class="wps-image wps-image--placeholder" src="%s" width="360" height="250" alt="" loading="lazy" />',
+							$placeholder_src
+						);
+					}
+					?>
+					<div class="widget-post-slider">
+						<a href="<?php echo esc_url( get_permalink() ); ?>"><?php echo wp_kses_post( $image_html ); ?></a>
+						<div class="wps-caption"><a href="<?php echo esc_url( get_permalink() ); ?>"><?php echo esc_html( get_the_title() ); ?></a></div>
+					</div>
+					<?php
+				}
+				wp_reset_postdata();
+				?>
+			</div>
+			<?php
+		}
 
 		echo wp_kses_post( $after_widget );
 	}
 
 	/**
-	 * Update
+	 * Sanitize and persist the submitted widget settings.
 	 *
-	 * @param  mixed $new_instance old instance.
-	 * @param  mixed $old_instance new instance.
-	 * @return statement
+	 * cat_name is normalized to either the 'all' sentinel or a non-negative integer term ID
+	 * stored as a string, so selected() comparisons against <option value> in form() match.
+	 *
+	 * @param array $new_instance Values submitted from the widget form.
+	 * @param array $old_instance Previously stored values (used as the merge base).
+	 * @return array The sanitized instance to persist.
 	 */
 	public function update( $new_instance, $old_instance ) {
 		$instance = $old_instance;
 
-		$instance['title']    = wp_strip_all_tags( $new_instance['title'] );
-		$instance['cat_name'] = wp_strip_all_tags( $new_instance['cat_name'] );
-		$instance['count']    = wp_strip_all_tags( $new_instance['count'] );
+		$instance['title'] = isset( $new_instance['title'] ) ? sanitize_text_field( $new_instance['title'] ) : '';
+
+		$cat_name = isset( $new_instance['cat_name'] ) ? sanitize_text_field( $new_instance['cat_name'] ) : 'all';
+		if ( 'all' !== $cat_name ) {
+			$cat_name = (string) absint( $cat_name );
+		}
+		$instance['cat_name'] = $cat_name;
+
+		$count             = isset( $new_instance['count'] ) ? absint( $new_instance['count'] ) : 5;
+		$instance['count'] = $count > 0 ? $count : 5;
 
 		return $instance;
 	}
@@ -136,7 +157,7 @@ class SP_Widget_Post_Slider extends WP_Widget {
 	public function form( $instance ) {
 		$defaults = array(
 			'title'    => 'Widget Post Slider',
-			'cat_name' => '',
+			'cat_name' => 'all',
 			'count'    => 5,
 		);
 		$instance = wp_parse_args( (array) $instance, $defaults );
@@ -148,36 +169,22 @@ class SP_Widget_Post_Slider extends WP_Widget {
 
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'cat_name' ) ); ?>"><?php esc_html_e( 'Select Category:', 'widget-post-slider' ); ?></label>
-			<?php
-			$categories = get_categories( array( 'hierarchical' => false ) );
-			if ( isset( $instance['cat_name'] ) ) {
-				$cat_id = $instance['cat_name'];
-			}
-			?>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'cat_name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'cat_name' ) ); ?>">
-
-
-				<option value='all'
+				<option value="all" <?php selected( $instance['cat_name'], 'all' ); ?>><?php esc_html_e( 'All Categories', 'widget-post-slider' ); ?></option>
 				<?php
-				if ( 'all' === $instance['cat_name'] ) {
-					echo 'selected="selected"';}
+				$categories = get_categories( array( 'hide_empty' => false ) );
+				foreach ( $categories as $category ) {
+					?>
+					<option value="<?php echo esc_attr( $category->term_id ); ?>" <?php selected( (string) $instance['cat_name'], (string) $category->term_id ); ?>><?php echo esc_html( $category->name ); ?></option>
+					<?php
+				}
 				?>
-				><?php esc_html_e( 'All Categories', 'widget-post-slider' ); ?></option>
-				<?php $categories = get_categories( 'hide_empty=0&depth=1&type=post' ); ?>
-				<?php foreach ( $categories as $category ) { ?>
-					<option value='<?php echo esc_attr( $category->term_id ); ?>'
-						<?php
-						if ( $category->term_id == $instance['cat_name'] ) {
-							echo 'selected="selected"';}
-						?>
-					><?php echo wp_kses_post( $category->cat_name ); ?></option>
-				<?php } ?>
 			</select>
 		</p>
 
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'count' ) ); ?>"><?php esc_html_e( 'Slide Count', 'widget-post-slider' ); ?></label>
-			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'count' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'count' ) ); ?>" value="<?php echo esc_attr( $instance['count'] ); ?>" />
+			<input class="widefat" type="number" min="1" step="1" id="<?php echo esc_attr( $this->get_field_id( 'count' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'count' ) ); ?>" value="<?php echo esc_attr( $instance['count'] ); ?>" />
 		</p>
 
 		<?php
