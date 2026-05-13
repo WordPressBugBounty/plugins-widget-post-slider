@@ -14,13 +14,22 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return void
  */
 function sp_widget_post_slider_register_assets() {
-	$suffix = ( ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) ? '' : '.min';
+	$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
 
 	wp_register_style( 'slick', WIDGET_POST_SLIDER_URL . "assets/css/slick{$suffix}.css", array(), '1.6.0' );
-	wp_register_style( 'widget-post-slider-style', WIDGET_POST_SLIDER_URL . "assets/css/style{$suffix}.css", array( 'slick' ), '1.3.7' );
+	wp_register_style( 'widget-post-slider-style', WIDGET_POST_SLIDER_URL . "assets/css/style{$suffix}.css", array( 'slick' ), WIDGET_POST_SLIDER_VERSION );
 
 	wp_register_script( 'slick-min-js', WIDGET_POST_SLIDER_URL . 'assets/js/slick.min.js', array( 'jquery' ), '1.6.0', true );
-	wp_register_script( 'widget-post-slider-js', WIDGET_POST_SLIDER_URL . "assets/js/widget-post-slider{$suffix}.js", array( 'slick-min-js' ), '1.3.7', true );
+	wp_register_script( 'widget-post-slider-js', WIDGET_POST_SLIDER_URL . "assets/js/widget-post-slider{$suffix}.js", array( 'slick-min-js' ), WIDGET_POST_SLIDER_VERSION, true );
+
+	wp_localize_script(
+		'widget-post-slider-js',
+		'wpsL10n',
+		array(
+			'prev' => esc_attr__( 'Previous', 'widget-post-slider' ),
+			'next' => esc_attr__( 'Next', 'widget-post-slider' ),
+		)
+	);
 }
 add_action( 'wp_enqueue_scripts', 'sp_widget_post_slider_register_assets' );
 

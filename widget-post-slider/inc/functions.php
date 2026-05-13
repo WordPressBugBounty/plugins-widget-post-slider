@@ -5,7 +5,35 @@
  * @package           Widget_Post_Slider
  */
 
-add_image_size( 'wps_thumbnail_size', 360, 250, true );
+add_action( 'after_setup_theme', 'sp_widget_post_slider_register_image_size' );
+
+/**
+ * Register the slider thumbnail size.
+ *
+ * Hooked on after_setup_theme rather than running at file load so the
+ * registration happens at the WP-defined extension point and doesn't
+ * fire before the rest of WP is ready.
+ *
+ * @return void
+ */
+function sp_widget_post_slider_register_image_size() {
+	add_image_size( 'wps_thumbnail_size', 360, 250, true );
+}
+
+
+/**
+ * Upper bound for the number of slides a single widget instance may render.
+ *
+ * Acts as a sanity ceiling so a stored or POSTed count cannot produce an
+ * arbitrarily large get_posts() query. Filterable for sites that genuinely
+ * need a larger slider; values < 1 fall back to the default ceiling.
+ *
+ * @return int
+ */
+function sp_widget_post_slider_max_count() {
+	$max = (int) apply_filters( 'widget_post_slider_max_count', 50 );
+	return $max > 0 ? $max : 50;
+}
 
 
 // Widget.
@@ -65,11 +93,13 @@ class SP_Widget_Post_Slider extends WP_Widget {
 		$before_title  = isset( $args['before_title'] ) ? $args['before_title'] : '';
 		$after_title   = isset( $args['after_title'] ) ? $args['after_title'] : '';
 
-		$title = isset( $instance['title'] ) ? apply_filters( 'widget_title', $instance['title'] ) : '';
+		$raw_title = isset( $instance['title'] ) ? $instance['title'] : '';
+		$title     = apply_filters( 'widget_title', $raw_title, $instance, $this->id_base );
 		$count = isset( $instance['count'] ) ? absint( $instance['count'] ) : 5;
 		if ( $count < 1 ) {
 			$count = 5;
 		}
+		$count = min( $count, sp_widget_post_slider_max_count() );
 		$cat_name = isset( $instance['cat_name'] ) ? sanitize_text_field( $instance['cat_name'] ) : 'all';
 
 		echo wp_kses_post( $before_widget );
@@ -138,12 +168,14 @@ class SP_Widget_Post_Slider extends WP_Widget {
 
 		$cat_name = isset( $new_instance['cat_name'] ) ? sanitize_text_field( $new_instance['cat_name'] ) : 'all';
 		if ( 'all' !== $cat_name ) {
-			$cat_name = (string) absint( $cat_name );
+			$term_id  = absint( $cat_name );
+			$cat_name = ( $term_id > 0 && term_exists( $term_id, 'category' ) ) ? (string) $term_id : 'all';
 		}
 		$instance['cat_name'] = $cat_name;
 
 		$count             = isset( $new_instance['count'] ) ? absint( $new_instance['count'] ) : 5;
-		$instance['count'] = $count > 0 ? $count : 5;
+		$count             = $count > 0 ? $count : 5;
+		$instance['count'] = min( $count, sp_widget_post_slider_max_count() );
 
 		return $instance;
 	}
@@ -156,7 +188,7 @@ class SP_Widget_Post_Slider extends WP_Widget {
 	 */
 	public function form( $instance ) {
 		$defaults = array(
-			'title'    => 'Widget Post Slider',
+			'title'    => __( 'Widget Post Slider', 'widget-post-slider' ),
 			'cat_name' => 'all',
 			'count'    => 5,
 		);

@@ -5,7 +5,7 @@ Tags: post slider, slider widget, post carousel, posts widget, category slider
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.3.7
+Stable tag: 1.3.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,11 @@ If you want to add a widget to show posts images with caption in a carousel/slid
 2. Widget area.
 
 == Changelog ==
+
+= 1.3.8 – May 13, 2026 =
+* Improved: Plugin security hardened (widget_title context, category validation, filterable slide count ceiling).
+* Improved: Internationalization — translatable default title and slider arrow labels; refreshed translation template.
+* Improved: Switched to plugin_dir_url, single version constant, SCRIPT_DEBUG-gated assets, and after_setup_theme image-size registration.
 
 = 1.3.7 – May 12, 2026 =
 * New: Posts without a featured image now render a placeholder so they no longer disappear from the slider.
